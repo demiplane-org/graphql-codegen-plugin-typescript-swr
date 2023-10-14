@@ -1,9 +1,8 @@
-# graphql-codegen-plugin-typescript-swr-ramiel <!-- omit in toc -->
+# graphql-codegen-plugin-typescript-swr <!-- omit in toc -->
 
 ## WARNING <!-- omit in toc -->
 
-This is a fork of [graphql-codegen-plugin-typescript-swr](https://github.com/croutonn/graphql-codegen-plugin-typescript-swr) to enable some features, waiting
-for these features to be available in the original package in any form. This is not proposed as PR because the code is not mature enough.
+This is a fork of [graphql-codegen-plugin-typescript-swr](https://github.com/croutonn/graphql-codegen-plugin-typescript-swr).  It also merges in the fork [graphql-codegen-plugin-typescript-swr-ramiel](https://github.com/ramiel/graphql-codegen-plugin-typescript-swr).  ANd brings everything up to date.  Instead of waiting for these features to be available in the original package in any form. This repo was created.
 
 ## Install
 
