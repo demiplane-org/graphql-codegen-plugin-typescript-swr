@@ -8,13 +8,14 @@ import {
   TypeScriptPluginConfig,
 } from '@graphql-codegen/typescript'
 import { plugin as graphQLRequestPlugin } from '@graphql-codegen/typescript-graphql-request'
-import { GraphQLRequestPluginConfig } from '@graphql-codegen/typescript-graphql-request/visitor'
 import {
   plugin as tsDocumentsPlugin,
   TypeScriptDocumentsPluginConfig,
 } from '@graphql-codegen/typescript-operations'
 import { parse, GraphQLSchema, buildClientSchema } from 'graphql'
 
+// eslint-disable-next-line import/no-unresolved
+import { GraphQLRequestPluginConfig } from '@graphql-codegen/typescript-graphql-request/typings/visitor'
 import { RawSWRPluginConfig } from '../src/config'
 import { plugin } from '../src/index'
 

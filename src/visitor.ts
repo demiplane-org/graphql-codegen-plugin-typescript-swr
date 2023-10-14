@@ -57,12 +57,53 @@ const composeQueryHandler = (
 
   codes.push(`use${pascalName}(${
     config.autogenKey ? '' : 'key: SWRKeyInterface, '
-  }variables${optionalVariables}: ${variablesType}, config?: SWRConfigInterface<${responseType}, ClientError>) {
-  return useSWR<${responseType}, ClientError>(${
+  }variables${optionalVariables}: ${variablesType}, config?: SWRConfigInterface<${responseType}, ClientError> & AdditionalOpts) {
+    const { skip = false, customKey, ...otherConfig } = config || {};
+    const [key, setKey] = useState<SWRKeyInterface>(null);
+    const result = useSWR<${responseType}, ClientError>(${
     config.autogenKey
-      ? `genKey<${variablesType}>('${pascalName}', variables)`
+      ? `customKey
+      ? key
+      : skip
+      ? null
+      : genKey<${variablesType}>('${pascalName}', variables)`
       : 'key'
-  }, () => sdk.${name}(variables), config);
+  }, () => sdk.${name}(variables), otherConfig);
+
+  const loading = useMemo(() => !skip && !result.data && !result.error, [
+    result.data,
+    result.error,
+    skip,
+  ]);
+
+  useEffect(() => {
+    if (customKey && !skip) {
+      setKey(customKey(genKey<${variablesType}>('${pascalName}', variables)));
+    }
+  }, [customKey, skip, variables]);
+
+  const _genKey = useCallback(
+    (variables: ${variablesType}) =>
+      customKey
+        ? customKey(
+            genKey<${variablesType}>(
+              '${pascalName}',
+              variables,
+            ),
+          )
+        : genKey<${variablesType}>(
+            '${pascalName}',
+            variables,
+          ),
+    [customKey],
+  );
+
+  return {
+    ...result,
+    loading,
+    genKey: _genKey
+  };
+
 }`)
 
   if (config.infinite) {
@@ -114,6 +155,10 @@ export class SWRVisitor extends ClientSideBaseVisitor<
 
     this._additionalImports.push(
       `${typeImport} { ClientError } from 'graphql-request/dist/types';`
+    )
+
+    this._additionalImports.push(
+      `import { useEffect, useMemo, useState, useCallback } from 'react';`
     )
 
     if (this.config.useTypeImports) {
@@ -211,9 +256,22 @@ export class SWRVisitor extends ClientSideBaseVisitor<
 ) => [keyof Variables, Variables[keyof Variables] | null] | null;`)
     }
 
+    // Add the function for auto-generation key for SWR
+    if (config.autogenSWRKey) {
+      codes.push(
+        `export const genKey = <V extends Record<string, unknown> = Record<string, unknown>>(name: string, object: V = {} as V): SWRKeyInterface => [name, ...Object.keys(object).sort().map(key => object[key])];`
+      )
+    }
+
     // Add getSdkWithHooks function
-    codes.push(`export function getSdkWithHooks(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
-  const sdk = getSdk(client, withWrapper);`)
+    codes.push(`export interface AdditionalOpts {
+      customKey?: (generatedName: SWRKeyInterface) => SWRKeyInterface;
+      skip?: boolean;
+    }
+  export function getSdkWithHooks(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
+  const sdk = getSdk(client, withWrapper);
+  
+  `)
 
     // Add the utility for useSWRInfinite
     if (this._enabledInfinite) {
@@ -233,13 +291,6 @@ export class SWRVisitor extends ClientSideBaseVisitor<
         fieldValue: Variables[typeof fieldName]
       ) => query({ ...variables, [fieldName]: fieldValue } as Variables)
   }`)
-    }
-
-    // Add the function for auto-generation key for SWR
-    if (config.autogenSWRKey) {
-      codes.push(
-        `  const genKey = <V extends Record<string, unknown> = Record<string, unknown>>(name: string, object: V = {} as V): SWRKeyInterface => [name, ...Object.keys(object).sort().map(key => object[key])];`
-      )
     }
 
     // Add return statement for getSdkWithHooks function and close the function
